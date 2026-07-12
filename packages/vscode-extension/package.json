@@ -1,0 +1,144 @@
+{
+	"name": "entracte-vscode",
+	"displayName": "entracte",
+	"description": "Your AI thinks. You earn AI credits.",
+	"version": "0.6.2",
+	"publisher": "entracte",
+	"license": "PolyForm-Noncommercial-1.0.0",
+	"icon": "icon.png",
+	"homepage": "https://entracte.ai",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mben-dev/entracte.ai.git",
+		"directory": "packages/vscode-extension"
+	},
+	"bugs": {
+		"url": "https://github.com/mben-dev/entracte.ai/issues"
+	},
+	"galleryBanner": {
+		"color": "#0b0b0f",
+		"theme": "dark"
+	},
+	"pricing": "Free",
+	"qna": false,
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"ai credits",
+		"earn",
+		"sponsor",
+		"cursor",
+		"copilot",
+		"codex",
+		"claude"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "entracte.menu",
+				"title": "entracte: Open menu"
+			},
+			{
+				"command": "entracte.signIn",
+				"title": "entracte: Sign in & earn"
+			},
+			{
+				"command": "entracte.signOut",
+				"title": "entracte: Sign out"
+			},
+			{
+				"command": "entracte.open",
+				"title": "entracte: Open the current sponsor"
+			},
+			{
+				"command": "entracte.showSponsors",
+				"title": "entracte: Show sponsors (earn)"
+			},
+			{
+				"command": "entracte.showQuotes",
+				"title": "entracte: Show motivation quotes"
+			},
+			{
+				"command": "entracte.showNews",
+				"title": "entracte: Show dev news"
+			},
+			{
+				"command": "entracte.refresh",
+				"title": "entracte: Refresh the sponsor line"
+			},
+			{
+				"command": "entracte.hide",
+				"title": "entracte: Hide the sponsor line for this session"
+			},
+			{
+				"command": "entracte.enableInSpinner",
+				"title": "entracte: Enable in-spinner sponsor (patches editor)"
+			},
+			{
+				"command": "entracte.disableInSpinner",
+				"title": "entracte: Disable in-spinner sponsor (restore editor)"
+			},
+			{
+				"command": "entracte.resetInAgentPosition",
+				"title": "entracte: Reset in-agent sponsor position"
+			},
+			{
+				"command": "entracte.enableCodex",
+				"title": "entracte: Enable Codex sponsor (patches Codex webview)"
+			},
+			{
+				"command": "entracte.disableCodex",
+				"title": "entracte: Disable Codex sponsor (restore Codex webview)"
+			}
+		],
+		"configuration": {
+			"title": "entracte",
+			"properties": {
+				"entracte.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show the entracte sponsor line in the status bar."
+				},
+				"entracte.apiUrl": {
+					"type": "string",
+					"default": "https://api.entracte.ai",
+					"description": "Base URL of the entracte ad API. Change this only if you self-host."
+				},
+				"entracte.siteUrl": {
+					"type": "string",
+					"default": "",
+					"description": "Advanced: the entracte web app URL used by “Open dashboard”. Leave empty to derive it from the API URL."
+				},
+				"entracte.publisher": {
+					"type": "string",
+					"default": "entracte",
+					"description": "Advanced: the publisher slug used for anonymous serves. Signing in overrides this and is how earnings are attributed to you."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outfile=dist/extension.js",
+		"check-types": "tsc --noEmit",
+		"lint": "biome check .",
+		"package": "pnpm build && vsce package --no-dependencies",
+		"publish:vscode": "pnpm build && vsce publish --no-dependencies",
+		"publish:openvsx": "pnpm build && ovsx publish --no-dependencies"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"@types/vscode": "^1.85.0",
+		"@vscode/vsce": "^3.2.0",
+		"esbuild": "^0.24.0",
+		"ovsx": "^0.10.0",
+		"typescript": "^5.6.0"
+	}
+}

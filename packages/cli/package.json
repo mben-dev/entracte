@@ -1,0 +1,21 @@
+{
+	"name": "entracte",
+	"version": "0.2.2",
+	"description": "Cookieless sponsor status line for Claude Code (optional sponsored spinner verb via --spinner). npx entracte",
+	"license": "PolyForm-Noncommercial-1.0.0",
+	"type": "module",
+	"bin": {
+		"entracte": "bin/setup.mjs"
+	},
+	"files": [
+		"bin/setup.mjs",
+		"statusline.mjs",
+		"spinner.mjs",
+		"entracte-mode.mjs",
+		"entracte-statusline.py",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=18"
+	}
+}

@@ -1,0 +1,9 @@
+src/**
+tsconfig.json
+.vscodeignore
+.gitignore
+.turbo/**
+node_modules/**
+**/*.ts
+*.vsix
+!dist/**

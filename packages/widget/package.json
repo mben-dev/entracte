@@ -1,0 +1,22 @@
+{
+	"name": "@entracte/widget",
+	"version": "0.1.0",
+	"description": "The cookieless, RGPD-native developer sponsorship widget.",
+	"license": "PolyForm-Noncommercial-1.0.0",
+	"type": "module",
+	"main": "entracte.js",
+	"module": "entracte.js",
+	"exports": {
+		".": "./entracte.js"
+	},
+	"files": [
+		"entracte.js",
+		"README.md"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"lint": "biome check ."
+	}
+}
