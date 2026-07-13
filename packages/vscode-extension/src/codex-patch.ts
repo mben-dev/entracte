@@ -121,6 +121,11 @@ const RUNTIME = `/* entracte-codex — added by the entracte extension; remove v
   window.__entracteCodex = true;
   var POOL = __ENTRACTE_POOL__;
   if (!Array.isArray(POOL) || !POOL.length) return;
+  // SELF-CLEANING: render nothing if the entracte extension was uninstalled (the
+  // editor runs no extension code on uninstall). fs may be unavailable in a
+  // sandboxed webview — then this fails OPEN and behaves as before.
+  function extPresent(){try{var os=require('os'),fs=require('fs'),path=require('path');var home=os.homedir();var D=['.cursor/extensions','.vscode/extensions','.vscode-oss/extensions','.windsurf/extensions'];for(var d=0;d<D.length;d++){try{var L=fs.readdirSync(path.join(home,D[d]));for(var j=0;j<L.length;j++)if(L[j].indexOf('entracte.entracte-vscode')===0)return true;}catch(e){}}return false;}catch(e){return true;}}
+  if(!extPresent())return;
   var OV_ID = "entracte-codex-ov";
   var idx = -1, lastGen = 0, shown = false, ov = null;
 

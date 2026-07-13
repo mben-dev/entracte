@@ -25,7 +25,7 @@ import * as vscode from "vscode";
  */
 
 const MARKER =
-	"/* ENTRACTE-AGENT v4 — added by the entracte extension; remove via “entracte: Disable in-spinner sponsor” */";
+	"/* ENTRACTE-AGENT v5 — added by the entracte extension; remove via “entracte: Disable in-spinner sponsor” */";
 // Version-agnostic prefix so enable/disable clean ANY prior entracte block.
 const MARKER_PREFIX = "/* ENTRACTE-AGENT";
 const BACKUP_SUFFIX = ".entracte-backup";
@@ -121,7 +121,14 @@ function injector(pool: SponsorItem[], _resetToken = ""): string {
 	// one view beacon per turn.
 	return `\n${MARKER}\n(function(){"use strict";try{
 var P=${data};if(!P||!P.length)return;
-var OV="entracte-agent-line",i=-1,lastGen=0,shown=false;
+// SELF-CLEANING: this block lives in the editor's bundle, and the editor runs NO
+// extension code on uninstall — so we can't un-patch there. Instead the injected
+// code checks that the entracte extension folder still exists; if it was
+// uninstalled, we render nothing and remove the overlay (below). Fail OPEN (keep
+// rendering) only if fs is unavailable — never break the feature over the check.
+function extPresent(){try{var os=require('os'),fs=require('fs'),path=require('path');var home=os.homedir();var D=['.cursor/extensions','.vscode/extensions','.vscode-oss/extensions','.windsurf/extensions'];for(var d=0;d<D.length;d++){try{var L=fs.readdirSync(path.join(home,D[d]));for(var j=0;j<L.length;j++)if(L[j].indexOf('entracte.entracte-vscode')===0)return true;}catch(e){}}return false;}catch(e){return true;}}
+if(!extPresent())return;
+var OV="entracte-agent-line",i=-1,lastGen=0,shown=false,ck=0,TMR=null;
 function rgba(h,a){try{h=(''+h).replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}catch(e){return 'rgba(111,120,230,'+a+')';}}
 function beacon(u){try{if(u&&/^https?:\\/\\//.test(u)){var im=new Image();im.referrerPolicy="no-referrer";im.src=u;}}catch(e){}}
 // Reliable "is generating" (verified live over CDP): Cursor shows a stop button
@@ -182,13 +189,14 @@ var sub;if(sp.headline){sub=String(sp.body||'');}else{try{sub=new URL(String(sp.
 if(head){var h=document.createElement('div');h.textContent=head;h.style.cssText='font-weight:600;font-size:13.5px;line-height:1.35;margin-bottom:3px';o.appendChild(h);}
 if(sub){var bd=document.createElement('div');bd.textContent=sub;bd.style.cssText='font-size:12px;opacity:.8;line-height:1.45';o.appendChild(bd);}
 if(sp.clickUrl){var cta=document.createElement('div');cta.textContent=String(sp.cta||'Learn more')+' ↗';cta.style.cssText='margin-top:8px;font-size:12px;font-weight:600;color:'+badge;o.appendChild(cta);}}
-function tick(){try{var now=Date.now();if(generating())lastGen=now;var on=(now-lastGen)<1500;var o=overlayEl();
+function tick(){try{if((++ck%80)===0&&!extPresent()){var _o=document.getElementById(OV);if(_o&&_o.parentNode)_o.parentNode.removeChild(_o);if(TMR)clearInterval(TMR);return;}
+var now=Date.now();if(generating())lastGen=now;var on=(now-lastGen)<1500;var o=overlayEl();
 if(on){var a=anchorRect();if(!a){o.style.display='none';return;}
 if(!shown){shown=true;i=(i+1)%P.length;render(P[i]);beacon(P[i].viewUrl);}
 o.style.left=Math.round(a.left)+'px';o.style.width=Math.round(a.width)+'px';o.style.bottom=Math.round(window.innerHeight-a.top+8)+'px';o.style.display='block';}
 else if(shown||o.style.display!=='none'){shown=false;o.style.display='none';}
 }catch(e){}}
-setInterval(tick,250);tick();
+TMR=setInterval(tick,250);tick();
 }catch(e){}})();\n`;
 }
 /**
