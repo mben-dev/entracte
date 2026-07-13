@@ -206,6 +206,10 @@ function initialize(api: any, dispose: () => void) {
 	const [creds, setCreds] = createSignal<Creds | null>(readCreds());
 	const [earnings, setEarnings] = createSignal<number | null>(null);
 	const [linking, setLinking] = createSignal(false);
+	// The device user-code, shown so the dev can sign in MANUALLY — opencode's
+	// plugin runtime sandboxes child processes, so auto-opening the browser via
+	// `open` silently fails. The code + entracte.ai/link always works.
+	const [linkCode, setLinkCode] = createSignal<string | null>(null);
 	let lastViewed = "";
 
 	const refresh = async () => {
@@ -239,10 +243,14 @@ function initialize(api: any, dispose: () => void) {
 			});
 			const s = (await res.json()) as {
 				deviceCode: string;
+				userCode: string;
 				verificationUrlComplete: string;
 				interval: number;
 				expiresIn: number;
 			};
+			setLinkCode(s.userCode);
+			// Best-effort auto-open; sandboxed (no-op) in some TUIs — the code shown
+			// in the status row is the reliable path.
 			openUrl(s.verificationUrlComplete);
 			const deadline = Date.now() + s.expiresIn * 1000;
 			while (Date.now() < deadline) {
@@ -273,6 +281,7 @@ function initialize(api: any, dispose: () => void) {
 			/* user can retry */
 		} finally {
 			setLinking(false);
+			setLinkCode(null);
 		}
 	};
 
@@ -365,8 +374,12 @@ function initialize(api: any, dispose: () => void) {
 						<text wrapMode="none" truncate={true}>
 							<span style={{ fg: creds() ? GREEN : AMBER }}>{"◆ "}</span>
 							{() => {
-								if (linking())
-									return "opening browser… approve to start earning";
+								if (linking()) {
+									const code = linkCode();
+									return code
+										? `sign in → open entracte.ai/link · code ${code}`
+										: "starting sign-in…";
+								}
 								if (!creds())
 									return "entracte — click here to sign in & earn from sponsors";
 								const a = ad();
