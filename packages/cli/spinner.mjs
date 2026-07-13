@@ -14,11 +14,39 @@
  * writes. No deps, no python. PolyForm-Noncommercial-1.0.0.
  */
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	statSync,
+	writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { INSTALL_ID, VERSION } from "./install-id.mjs";
+
+// Anonymous per-machine install id, INLINED (no import) so this file stays
+// standalone when copied to ~/.claude/. First-party only; best-effort.
+function installId() {
+	try {
+		const dir = join(
+			process.env.XDG_CONFIG_HOME || join(homedir(), ".config"),
+			"entracte",
+		);
+		const file = join(dir, "install-id");
+		if (existsSync(file)) {
+			const v = readFileSync(file, "utf8").trim();
+			if (v) return v;
+		}
+		mkdirSync(dir, { recursive: true });
+		const id = randomUUID();
+		writeFileSync(file, id, { mode: 0o600 });
+		return id;
+	} catch {
+		return null;
+	}
+}
 
 const API = (process.env.ENTRACTE_API || "https://api.entracte.ai").replace(
 	/\/$/,
@@ -141,8 +169,7 @@ export async function fetchPool({ cwd = "", token = null, n = 6 } = {}) {
 				surface: "terminal",
 				keywords: keywordsFor(cwd),
 				n,
-				installId: INSTALL_ID ?? undefined,
-				version: VERSION ?? undefined,
+				installId: installId() ?? undefined,
 			}),
 			signal: AbortSignal.timeout(2500),
 		});

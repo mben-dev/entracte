@@ -9,9 +9,40 @@ import { spawn } from "node:child_process";
  * when the spinner isn't installed. Fires the view beacon once per new sponsor
  * (server-side, only while the session is active). No deps. PolyForm-Noncommercial-1.0.0.
  */
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	statSync,
+	writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
-import { INSTALL_ID, VERSION } from "./install-id.mjs";
+
+// Anonymous per-machine install id (shared by the entracte terminal surfaces on
+// this machine) so the network can count active installs. First-party only,
+// never identity/IP-derived. INLINED (no import) so this file stays standalone
+// when copied to ~/.claude/. Best-effort: any error just omits the id.
+function installId() {
+	try {
+		const dir = join(
+			process.env.XDG_CONFIG_HOME || join(homedir(), ".config"),
+			"entracte",
+		);
+		const file = join(dir, "install-id");
+		if (existsSync(file)) {
+			const v = readFileSync(file, "utf8").trim();
+			if (v) return v;
+		}
+		mkdirSync(dir, { recursive: true });
+		const id = randomUUID();
+		writeFileSync(file, id, { mode: 0o600 });
+		return id;
+	} catch {
+		return null;
+	}
+}
 
 const API = (process.env.ENTRACTE_API || "https://api.entracte.ai").replace(
 	/\/$/,
@@ -177,8 +208,7 @@ async function main() {
 				publisher: PUBLISHER,
 				adType: "entracte-text",
 				keywords: keywordsFor(cwd),
-				installId: INSTALL_ID ?? undefined,
-				version: VERSION ?? undefined,
+				installId: installId() ?? undefined,
 			}),
 			signal: AbortSignal.timeout(2000),
 		});
