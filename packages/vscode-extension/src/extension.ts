@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import * as codexPatch from "./codex-patch";
 import * as spinnerPatch from "./spinner-patch";
@@ -21,12 +22,19 @@ const SECRET_KEY = "entracte.creds";
 
 interface Creds {
 	token: string;
+	/** The publisher SLUG — the technical id used to attribute serves. */
 	publisher: string;
+	/** The account's display name, shown in the UI (falls back to the slug). */
+	publisherName?: string;
 }
 
 let item: vscode.StatusBarItem;
 let secrets: vscode.SecretStorage;
 let creds: Creds | null = null;
+/** Anonymous per-machine install id + extension version, sent on /serve so the
+ * network can count active installs. First-party only, never identity-derived. */
+let installId: string | undefined;
+let extVersion: string | undefined;
 let creditsInfo: {
 	hasKey: boolean;
 	remainingUsd: number | null;
@@ -175,12 +183,13 @@ async function startLink(): Promise<void> {
 						const p = (await pr.json()) as {
 							status: string;
 							machineToken?: string;
-							publisher?: { slug?: string };
+							publisher?: { slug?: string; name?: string };
 						};
 						if (p.status === "ok" && p.machineToken) {
 							creds = {
 								token: p.machineToken,
 								publisher: p.publisher?.slug ?? "you",
+								publisherName: p.publisher?.name ?? undefined,
 							};
 							await secrets.store(SECRET_KEY, JSON.stringify(creds));
 							return true;
@@ -197,7 +206,7 @@ async function startLink(): Promise<void> {
 		if (ok) {
 			await refreshBalance(true);
 			vscode.window.showInformationMessage(
-				`entracte: signed in as ${creds?.publisher}. You'll earn a share from the sponsors shown here.`,
+				`entracte: signed in as ${creds?.publisherName ?? creds?.publisher}. You'll earn a share from the sponsors shown here.`,
 			);
 		}
 	} catch {
@@ -238,7 +247,10 @@ function renderWallet(): void {
 	const tip = new vscode.MarkdownString(undefined, true);
 	tip.isTrusted = false;
 	tip.appendMarkdown("**entracte** — your AI credits\n\n");
-	if (creds) tip.appendMarkdown(`Signed in as **${creds.publisher}**`);
+	if (creds)
+		tip.appendMarkdown(
+			`Signed in as **${creds.publisherName ?? creds.publisher}**`,
+		);
 	if (creditsInfo?.hasKey && creditsInfo.remainingUsd != null) {
 		tip.appendMarkdown(
 			` · **${fmtUsd(creditsInfo.remainingUsd)}** left to spend`,
@@ -299,6 +311,8 @@ async function fetchPool(): Promise<spinnerPatch.SponsorItem[]> {
 				publisher: creds?.publisher ?? cfg("publisher", "entracte"),
 				adType: "entracte-text",
 				surface: SURFACE,
+				installId,
+				version: extVersion,
 			}),
 			signal: AbortSignal.timeout(5000),
 		});
@@ -583,7 +597,9 @@ async function showMenu(): Promise<void> {
 			},
 			{
 				label: "$(sign-out) Sign out",
-				detail: creds?.publisher ? `Signed in as ${creds.publisher}` : "",
+				detail: creds?.publisher
+					? `Signed in as ${creds.publisherName ?? creds.publisher}`
+					: "",
 				run: signOut,
 			},
 		);
@@ -611,6 +627,12 @@ export async function activate(
 	context: vscode.ExtensionContext,
 ): Promise<void> {
 	secrets = context.secrets;
+	installId = context.globalState.get<string>("entracte.installId");
+	if (!installId) {
+		installId = randomUUID();
+		void context.globalState.update("entracte.installId", installId);
+	}
+	extVersion = context.extension?.packageJSON?.version;
 	try {
 		const raw = await secrets.get(SECRET_KEY);
 		if (raw) creds = JSON.parse(raw) as Creds;

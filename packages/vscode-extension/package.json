@@ -2,7 +2,7 @@
 	"name": "entracte-vscode",
 	"displayName": "entracte",
 	"description": "Your AI thinks. You earn AI credits.",
-	"version": "0.6.2",
+	"version": "0.6.3",
 	"publisher": "entracte",
 	"license": "PolyForm-Noncommercial-1.0.0",
 	"icon": "icon.png",

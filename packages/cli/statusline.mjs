@@ -11,6 +11,7 @@ import { spawn } from "node:child_process";
  */
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { INSTALL_ID, VERSION } from "./install-id.mjs";
 
 const API = (process.env.ENTRACTE_API || "https://api.entracte.ai").replace(
 	/\/$/,
@@ -176,6 +177,8 @@ async function main() {
 				publisher: PUBLISHER,
 				adType: "entracte-text",
 				keywords: keywordsFor(cwd),
+				installId: INSTALL_ID ?? undefined,
+				version: VERSION ?? undefined,
 			}),
 			signal: AbortSignal.timeout(2000),
 		});

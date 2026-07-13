@@ -28,6 +28,30 @@ import sys
 import time
 import urllib.request
 
+
+def _install_id():
+    """Anonymous per-machine install id, shared with the Node CLI. Best-effort:
+    a random UUID at ~/.config/entracte/install-id; never identity/IP-derived."""
+    try:
+        cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
+            os.path.expanduser("~"), ".config"
+        )
+        path = os.path.join(cfg, "entracte", "install-id")
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                v = f.read().strip()
+                if v:
+                    return v
+        import uuid
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        vid = str(uuid.uuid4())
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(vid)
+        return vid
+    except Exception:
+        return None
+
 API = os.environ.get("ENTRACTE_API", "https://api.entracte.ai").rstrip("/")
 PUBLISHER = os.environ.get("ENTRACTE_PUBLISHER", "entracte")
 SERVE_TTL = 30  # seconds — don't hit the API on every refresh
@@ -65,9 +89,15 @@ def main() -> None:
         keywords = ["typescript"]
 
     try:
-        body = json.dumps(
-            {"publisher": PUBLISHER, "adType": "entracte-text", "keywords": keywords}
-        ).encode()
+        payload = {
+            "publisher": PUBLISHER,
+            "adType": "entracte-text",
+            "keywords": keywords,
+        }
+        iid = _install_id()
+        if iid:
+            payload["installId"] = iid
+        body = json.dumps(payload).encode()
         req = urllib.request.Request(
             f"{API}/api/serve", data=body, headers={"Content-Type": "application/json"}
         )

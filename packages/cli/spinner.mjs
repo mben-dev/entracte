@@ -18,6 +18,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { INSTALL_ID, VERSION } from "./install-id.mjs";
 
 const API = (process.env.ENTRACTE_API || "https://api.entracte.ai").replace(
 	/\/$/,
@@ -140,6 +141,8 @@ export async function fetchPool({ cwd = "", token = null, n = 6 } = {}) {
 				surface: "terminal",
 				keywords: keywordsFor(cwd),
 				n,
+				installId: INSTALL_ID ?? undefined,
+				version: VERSION ?? undefined,
 			}),
 			signal: AbortSignal.timeout(2500),
 		});

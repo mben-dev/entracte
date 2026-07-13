@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
 	appendFileSync,
 	mkdirSync,
@@ -37,6 +38,30 @@ const GREEN = "#10b981";
 const AMBER = "#f59e0b";
 const DIM = "#6b7280";
 const CREDS = join(homedir(), ".config", "entracte", "credentials.json");
+// A distinct install id for the opencode surface (so a machine that also runs
+// the terminal CLI counts as a separate install). Anonymous, first-party only.
+const INSTALL_ID_FILE = join(
+	homedir(),
+	".config",
+	"entracte",
+	"install-id-opencode",
+);
+function installId(): string | null {
+	try {
+		try {
+			const v = readFileSync(INSTALL_ID_FILE, "utf8").trim();
+			if (v) return v;
+		} catch {
+			/* not created yet */
+		}
+		const id = randomUUID();
+		mkdirSync(dirname(INSTALL_ID_FILE), { recursive: true });
+		writeFileSync(INSTALL_ID_FILE, id, { mode: 0o600 });
+		return id;
+	} catch {
+		return null;
+	}
+}
 
 /**
  * Finding H4 (defense-in-depth): the server strips control chars, but a
@@ -114,6 +139,7 @@ async function fetchAd(token?: string): Promise<Ad | null> {
 				publisher: "entracte",
 				adType: "entracte-text",
 				surface: "opencode",
+				installId: installId() ?? undefined,
 			}),
 			signal: AbortSignal.timeout(4000),
 		});
